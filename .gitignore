@@ -1,0 +1,5 @@
+.venv
+.build
+.dist
+setup.py
+setup-pypi.py
