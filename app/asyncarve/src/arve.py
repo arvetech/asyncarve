@@ -16,7 +16,7 @@ from aiohttp.hdrs import METH_GET, METH_POST
 from yarl import URL
 
 from ..src.exceptions import ArveError, ArveConnectionError
-from ..src.const import HOST, PORT
+from ..src.const import HOST, PORT, HOST_LOCAL, PORT_LOCAL
 from ..src.models import ArveSensProData, ArveSensPro
 
 
@@ -26,7 +26,6 @@ class Arve:
 
     api_key: str
     customer_token: str
-    device_sn: str
     request_timeout: int = 10
     session: ClientSession | None = None
 
@@ -70,11 +69,29 @@ class Arve:
 
         return await response.json()
 
-    async def get_sensor_info(self):
+    async def get_devices(self):
         headers = {
             "api_key": f"{self.api_key}",
             "customerToken": f"{self.customer_token}",
-            "devicesn": f"{self.device_sn}"
+        }
+
+        data_raw: dict = await self._request("/homeassistant/device/getDevices", headers)
+        try:
+            data = [i["sn"] for i in data_raw]
+            return data
+        except TypeError as exception:
+            if data_raw:
+                msg = data_raw['message']
+                raise ArveConnectionError(msg) from exception
+            else:
+                msg = "Unable to get the devices for given credentials"
+                raise ArveConnectionError(msg) from exception
+
+    async def get_sensor_info(self, sn):
+        headers = {
+            "api_key": f"{self.api_key}",
+            "customerToken": f"{self.customer_token}",
+            "devicesn": f"{sn}"
         }
 
         data_raw: dict = await self._request("/homeassistant/device/deviceInfo", headers)
@@ -91,7 +108,7 @@ class Arve:
                 msg = "Unable to get the actual data from device, please make sure that the device is online"
                 raise ArveConnectionError(msg) from exception
 
-    async def device_sensor_data(self):
+    async def device_sensor_data(self, sn):
         # try:
         cur_t = int(time.time())
 
@@ -101,7 +118,7 @@ class Arve:
         headers = {
             "api_key": f"{self.api_key}",
             "customerToken": f"{self.customer_token}",
-            "devicesn": f"{self.device_sn}",
+            "devicesn": f"{sn}",
             "from": fr,
             "to": to
         }
@@ -122,32 +139,32 @@ class Arve:
                 msg = "Unable to get the actual data from device, please make sure that the device is online"
                 raise ArveError(msg) from exception
 
-    async def get_curr_co2(self):
-        res = await self.device_sensor_data()
+    async def get_curr_co2(self, sn):
+        res = await self.device_sensor_data(sn)
         return res.co2
 
-    async def get_curr_aqi(self):
-        res = await self.device_sensor_data()
+    async def get_curr_aqi(self, sn):
+        res = await self.device_sensor_data(sn)
         return res.aqi
 
-    async def get_curr_humidity(self):
-        res = await self.device_sensor_data()
+    async def get_curr_humidity(self, sn):
+        res = await self.device_sensor_data(sn)
         return res.humidity
 
-    async def get_curr_pm10(self):
-        res = await self.device_sensor_data()
+    async def get_curr_pm10(self, sn):
+        res = await self.device_sensor_data(sn)
         return res.pm10
 
-    async def get_curr_pm25(self):
-        res = await self.device_sensor_data()
+    async def get_curr_pm25(self, sn):
+        res = await self.device_sensor_data(sn)
         return res.pm25
 
-    async def get_curr_temperature(self):
-        res = await self.device_sensor_data()
+    async def get_curr_temperature(self, sn):
+        res = await self.device_sensor_data(sn)
         return res.temperature
 
-    async def get_curr_tvoc(self):
-        res = await self.device_sensor_data()
+    async def get_curr_tvoc(self, sn):
+        res = await self.device_sensor_data(sn)
         return res.tvoc
 
     async def close(self) -> None:
