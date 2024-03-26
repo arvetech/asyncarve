@@ -36,13 +36,24 @@ class ArveSensPro(BaseModel):
 
 @dataclass
 class ArveSensProData(BaseModel):
-    aqi: int
-    co2: float
-    humidity: float
-    pm10: float
-    pm25: float
-    temperature: float
-    tvoc: int
+    aqi: int | None
+    co2: float | None
+    humidity: float | None
+    pm10: float | None
+    pm25: float | None
+    temperature: float | None
+    tvoc: int | None
+
+
+@dataclass
+class ArveDevices(BaseModel):
+    sn: list[str]
+
+
+@dataclass
+class ArveDeviceInfo(BaseModel):
+    sensors: ArveSensProData
+    info: ArveSensPro
 
 # @dataclass
 # class SomeClass:

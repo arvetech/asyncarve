@@ -17,7 +17,7 @@ from yarl import URL
 
 from ..src.exceptions import ArveError, ArveConnectionError
 from ..src.const import HOST, PORT, HOST_LOCAL, PORT_LOCAL
-from ..src.models import ArveSensProData, ArveSensPro
+from ..src.models import ArveSensProData, ArveSensPro, ArveDevices
 
 
 @dataclass
@@ -77,7 +77,7 @@ class Arve:
 
         data_raw: dict = await self._request("/homeassistant/device/getDevices", headers)
         try:
-            data = [i["sn"] for i in data_raw]
+            data = ArveDevices([i["sn"] for i in data_raw])
             return data
         except TypeError as exception:
             if data_raw:
@@ -136,8 +136,9 @@ class Arve:
                 msg = data['message']
                 raise ArveError(msg) from exception
             else:
-                msg = "Unable to get the actual data from device, please make sure that the device is online"
-                raise ArveError(msg) from exception
+                # Device is online:
+                res = ArveSensProData(None, None, None, None, None, None, None)
+                return res
 
     async def get_curr_co2(self, sn):
         res = await self.device_sensor_data(sn)
